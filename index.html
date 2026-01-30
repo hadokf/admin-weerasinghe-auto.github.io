@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Command Center | Weerasinghe Auto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #050505; color: white; font-family: 'Rajdhani', sans-serif; }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .glass-panel { background: #111; border: 1px solid #333; }
+        .status-btn.active { border-color: #00f3ff; background: rgba(0, 243, 255, 0.1); color: #00f3ff; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-10 flex flex-col items-center">
+
+    <div class="text-center mb-8">
+        <h1 class="text-3xl md:text-5xl font-orbitron font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400">COMMAND CENTER</h1>
+        <p class="text-gray-500 text-sm tracking-[0.5em] uppercase mt-2">Weerasinghe Enterprise</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8 w-full max-w-6xl">
+        
+        <div class="glass-panel p-6 rounded-xl shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
+            
+            <div class="flex gap-2 mb-6 border-b border-gray-800 pb-6">
+                <input type="text" id="search-vno" placeholder="Search Vehicle (Ex: WP CAB-1234)" class="w-full bg-black border border-gray-700 p-3 rounded text-white font-bold uppercase focus:border-cyan-400 outline-none">
+                <button onclick="fetchDetails()" class="bg-gray-800 hover:bg-gray-700 px-4 rounded text-cyan-400">
+                    <i class="fa-solid fa-search"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs text-gray-500 uppercase font-bold">Vehicle No</label>
+                        <input type="text" id="v-no" class="w-full bg-black border border-gray-700 p-3 rounded text-white font-bold uppercase focus:border-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 uppercase font-bold">Owner Name</label>
+                        <input type="text" id="v-owner" class="w-full bg-black border border-gray-700 p-3 rounded text-white focus:border-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-500 uppercase font-bold">Service Type</label>
+                    <select id="v-service" class="w-full bg-black border border-gray-700 p-3 rounded text-white focus:border-blue-500 outline-none">
+                        <option value="Full Service">Full Service</option>
+                        <option value="Hybrid Repair">Hybrid Repair</option>
+                        <option value="Engine Tune-up">Engine Tune-up</option>
+                        <option value="Scan & Diagnostic">Scan & Diagnostic</option>
+                        <option value="Oil Change">Oil Change</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-500 uppercase font-bold mb-2 block">Current Status</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setStatus('PENDING')" id="btn-pending" class="status-btn border border-gray-700 p-2 rounded text-xs font-bold hover:bg-gray-900 transition text-yellow-500">PENDING</button>
+                        <button onclick="setStatus('ONGOING')" id="btn-ongoing" class="status-btn border border-gray-700 p-2 rounded text-xs font-bold hover:bg-gray-900 transition text-blue-500">ONGOING</button>
+                        <button onclick="setStatus('DONE')" id="btn-done" class="status-btn border border-gray-700 p-2 rounded text-xs font-bold hover:bg-gray-900 transition text-green-500">DONE</button>
+                    </div>
+                    <input type="hidden" id="v-status" value="PENDING">
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-500 uppercase font-bold">Mechanic Notes</label>
+                    <textarea id="v-notes" class="w-full bg-black border border-gray-700 p-3 rounded text-white focus:border-blue-500 outline-none" rows="3" placeholder="Parts replaced, Next service due..."></textarea>
+                </div>
+
+                <button onclick="saveJob()" id="save-btn" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-black font-bold py-4 rounded uppercase transition mt-2 shadow-[0_0_20px_rgba(0,243,255,0.3)]">
+                    <i class="fa-solid fa-save mr-2"></i> UPDATE / SAVE JOB
+                </button>
+                <p id="msg-box" class="text-center text-xs mt-2 h-4"></p>
+            </div>
+        </div>
+
+        <div class="glass-panel p-6 rounded-xl flex flex-col items-center justify-center text-center relative">
+            <h2 class="text-xl font-orbitron font-bold mb-6 text-gray-400">CUSTOMER CARD</h2>
+            
+            <div id="qr-container" class="bg-white text-black p-6 rounded-lg w-full max-w-sm shadow-xl hidden">
+                <div class="flex justify-between items-center border-b-2 border-black pb-4 mb-4">
+                    <div class="text-left">
+                        <h3 class="font-bold text-lg leading-none">WEERASINGHE</h3>
+                        <p class="text-[10px] tracking-widest">ENTERPRISE</p>
+                    </div>
+                    <div class="bg-black text-white text-[10px] px-2 py-1 font-bold">JOB CARD</div>
+                </div>
+
+                <div class="mb-4">
+                    <img id="qr-img" src="" class="w-40 h-40 mx-auto border-2 border-black p-1">
+                </div>
+
+                <div class="text-left space-y-2 text-sm bg-gray-100 p-3 rounded">
+                    <div class="flex justify-between">
+                        <span class="text-gray-500 text-xs">VEHICLE</span>
+                        <span id="card-vno" class="font-bold uppercase">WP XXX-0000</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-500 text-xs">OWNER</span>
+                        <span id="card-owner" class="font-bold">Name</span>
+                    </div>
+                </div>
+                
+                <p class="text-[10px] text-gray-400 mt-4">Scan to view live status & download report</p>
+            </div>
+
+            <div id="qr-placeholder" class="text-gray-600">
+                <i class="fa-solid fa-qrcode text-6xl mb-4 opacity-20"></i>
+                <p>Fill form and save to generate Job Card</p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // *** ඔයාගේ GOOGLE SCRIPT URL එක ***
+        const API_URL = "https://script.google.com/macros/s/AKfycby5xgqx1-RukHKQh9pfNEYmRp8tu-IS8lIYKHOkd4vhEf4jfvb2d1RausB3rG124d0/exec";
+        
+        // *** ඔයාගේ අලුත් GITHUB SITE LINK එක ***
+        const CLIENT_SITE = "https://hadokf.github.io/weerasinghe-auto-care.github.io/"; 
+
+        // 1. SEARCH FUNCTION (To Edit/Update)
+        async function fetchDetails() {
+            const searchInput = document.getElementById('search-vno').value;
+            const msg = document.getElementById('msg-box');
+            
+            if(!searchInput) return alert("Enter Vehicle Number to Search");
+
+            msg.innerText = "Searching...";
+            msg.className = "text-center text-xs mt-2 text-yellow-500";
+
+            try {
+                const res = await fetch(`${API_URL}?vehicle=${searchInput}`);
+                const data = await res.json();
+
+                if(data.found) {
+                    const job = data.records[0]; // Get latest job
+                    
+                    // Fill the form
+                    document.getElementById('v-no').value = searchInput.toUpperCase();
+                    document.getElementById('v-owner').value = job.owner;
+                    document.getElementById('v-service').value = job.service;
+                    document.getElementById('v-notes').value = job.notes;
+                    
+                    // Set Status Button
+                    setStatus(job.status);
+
+                    msg.innerText = "Details Loaded! Edit and Save to Update.";
+                    msg.className = "text-center text-xs mt-2 text-green-500";
+                    
+                    // Show QR for existing job
+                    generateCard(searchInput.toUpperCase(), job.owner);
+                } else {
+                    msg.innerText = "Vehicle Not Found. You can add it as new.";
+                    msg.className = "text-center text-xs mt-2 text-blue-400";
+                    // Auto fill the vehicle no box for new entry
+                    document.getElementById('v-no').value = searchInput.toUpperCase();
+                }
+            } catch (e) {
+                console.error(e);
+                msg.innerText = "Error fetching data.";
+                msg.className = "text-center text-xs mt-2 text-red-500";
+            }
+        }
+
+        // 2. SAVE / UPDATE FUNCTION
+        async function saveJob() {
+            const vNo = document.getElementById('v-no').value;
+            const owner = document.getElementById('v-owner').value;
+            const service = document.getElementById('v-service').value;
+            const status = document.getElementById('v-status').value;
+            const notes = document.getElementById('v-notes').value;
+            const btn = document.getElementById('save-btn');
+            const msg = document.getElementById('msg-box');
+
+            if(!vNo) return alert("Vehicle Number Required!");
+
+            // UI Loading
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> SAVING...';
+            btn.classList.add('opacity-50');
+
+            try {
+                // Post Data
+                await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ 
+                        vehicle: vNo, 
+                        owner: owner, 
+                        service: service, 
+                        status: status, 
+                        notes: notes 
+                    })
+                });
+
+                // Generate QR Card
+                generateCard(vNo, owner);
+                
+                msg.innerText = "✅ DATABASE UPDATED SUCCESSFULLY!";
+                msg.className = "text-center text-xs mt-2 text-green-500 font-bold";
+
+            } catch (e) {
+                msg.innerText = "❌ ERROR SAVING.";
+                msg.className = "text-center text-xs mt-2 text-red-500";
+            }
+
+            // Reset UI
+            btn.innerHTML = '<i class="fa-solid fa-save mr-2"></i> UPDATE / SAVE JOB';
+            btn.classList.remove('opacity-50');
+        }
+
+        // Helper: Status Button Logic
+        function setStatus(status) {
+            document.getElementById('v-status').value = status;
+            // Reset classes
+            document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active', 'border-blue-500'));
+            
+            // Set Active
+            if(status === 'PENDING') document.getElementById('btn-pending').classList.add('active');
+            if(status === 'ONGOING') document.getElementById('btn-ongoing').classList.add('active');
+            if(status === 'DONE') document.getElementById('btn-done').classList.add('active');
+        }
+
+        // Helper: Generate QR Card
+        function generateCard(vNo, owner) {
+            // Remove trailing slash if user enters URL with it, to avoid double slash
+            const cleanBaseUrl = CLIENT_SITE.endsWith('/') ? CLIENT_SITE : CLIENT_SITE + '/';
+            const link = `${cleanBaseUrl}?search=${vNo.replace(/\s/g, '')}`;
+            
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}`;
+            
+            document.getElementById('qr-img').src = qrUrl;
+            document.getElementById('card-vno').innerText = vNo.toUpperCase();
+            document.getElementById('card-owner').innerText = owner;
+            
+            document.getElementById('qr-placeholder').classList.add('hidden');
+            document.getElementById('qr-container').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
